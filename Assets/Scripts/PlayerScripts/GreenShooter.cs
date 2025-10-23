@@ -2,45 +2,51 @@
 
 public class GreenShooter : MonoBehaviour
 {
-    //fancy word for putting something in the inspector.
-    [SerializeField] float defaultSpeed = 12f;
+    [SerializeField] private float defaultSpeed = 12f;
+    [SerializeField] private float lifeTime = 2f;
 
-    private float speed;
     private Vector3 direction;
+    private float speed;
     private bool initialized = false;
 
-    // Call this right after Instantiate
-
-    //targetWorldPos: where the bullet should fly toward (mouse click position).
-    //speedOverride: lets you change the bullet’s speed(for power-ups).
-    //scale: lets you change the bullet’s size(for power-ups).
-    public void Initialize(Vector3 targetWorldPos, float speedOverride, float scale)
+    /// <summary>
+    /// Must be called right after Instantiate.
+    /// targetWorldPos: world point to fly toward (e.g., mouse world position)
+    /// speedOverride: >0 to override default speed
+    /// scale: 1 = normal, otherwise scales the projectile
+    /// </summary>
+    public void Initialize(Vector3 targetWorldPos, float speedOverride = 0f, float scale = 1f)
     {
-        direction = (targetWorldPos - transform.position);
-        direction.z = 0f;
-        direction.Normalize();
+        if (PauseManager.IsPaused) return; // ignore init while paused
 
-        speed = speedOverride > 0f ? speedOverride : defaultSpeed;
-        if (scale != 1f) transform.localScale *= scale;
+        Vector3 v = targetWorldPos - transform.position;
+        v.z = 0f;
+
+        // Fallback to right if target is essentially the same position
+        if (v.sqrMagnitude < 0.0001f) v = Vector3.right;
+
+        direction = v.normalized;
+        speed = (speedOverride > 0f) ? speedOverride : defaultSpeed;
+
+        if (!Mathf.Approximately(scale, 1f))
+            transform.localScale *= scale;
 
         initialized = true;
     }
 
-    void Start()
+    private void Start()
     {
-        // Fallback if greenshooter forgets to Initialize
-        if (!initialized)
+        // If spawned while paused or not initialized by the spawner, kill it immediately
+        if (PauseManager.IsPaused || !initialized)
         {
-            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mousePos.z = 0f;
-            direction = (mousePos - transform.position).normalized;
-            speed = defaultSpeed;
+            Destroy(gameObject);
+            return;
         }
 
-        Destroy(gameObject, 2f);
+        Destroy(gameObject, lifeTime);
     }
 
-    void Update()
+    private void Update()
     {
         transform.position += direction * speed * Time.deltaTime;
     }

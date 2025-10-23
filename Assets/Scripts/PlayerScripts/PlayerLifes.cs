@@ -4,11 +4,9 @@ using System.Collections;
 
 public class PlayerLifes : MonoBehaviour
 {
-
     [Header("Explosion")]
-    public GameObject HeartExplosion;   // child under the Player prefab, disabled by default
+    public GameObject HeartExplosion;
 
-    //stuff to manage player lives, respawn, invincibility frames, and damage flash
     [Header("Lives")]
     public int maxLives = 3;
 
@@ -31,77 +29,64 @@ public class PlayerLifes : MonoBehaviour
     public UnityEvent onPlayerOutOfLives;
 
     private int currentLives;
-    private UIManager UI = null; //can hold link to Canvas 
+    private UIManager UI = null;
 
     void Awake()
-    // Initialize lives and components
     {
         currentLives = Mathf.Max(1, maxLives);
-        onLivesChanged?.Invoke(currentLives);
 
         spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-        }
+        if (spriteRenderer != null) originalColor = spriteRenderer.color;
 
-        // ensure the child explosion starts OFF
         if (HeartExplosion) HeartExplosion.SetActive(false);
-    }
-    // Option to add lives with maxLives cap (3). Put into code later, not needed for now.
 
-    void Start()
-    {
-        UI = GameObject.Find("Canvas").GetComponent<UIManager>();
-        //link to UI code
-        UI.UpdateLives(currentLives);
+        UI = FindObjectOfType<UIManager>(); // safer than GameObject.Find
+        SafeUpdateUI();                      // show correct hearts immediately
+
+        onLivesChanged?.Invoke(currentLives);
     }
 
-    void Update()
-    {
-     UI.UpdateLives(currentLives); //actual parameter aka value 
-    }
+    // REMOVE the per-frame UI write. It can mask your first hit change.
+    // void Update() {}
 
     public void GiveLife(int amount = 1)
     {
         currentLives = Mathf.Min(maxLives, currentLives + amount);
+        SafeUpdateUI();
         onLivesChanged?.Invoke(currentLives);
         Debug.Log($"Player gained life, lives: {currentLives}");
     }
-    // Player takes damage, loses life, triggers invincibility frames and damage flash
+
     public void TakeHit(int amount = 1)
     {
         if (invincible) return;
 
         currentLives = Mathf.Max(0, currentLives - amount);
+        SafeUpdateUI(); // update hearts immediately on FIRST hit
         onLivesChanged?.Invoke(currentLives);
         Debug.Log($"Player took damage, lives: {currentLives}");
 
         StartCoroutine(FlashDamage());
 
-        // if lives are 0, spawn explosion and respawn
         if (currentLives <= 0)
         {
             Debug.Log("Player out of lives!");
             onPlayerOutOfLives?.Invoke();
 
-            // turn ON the child explosion and restart its animation from frame 0
             if (HeartExplosion != null)
             {
-                // if it’s a child, position is already correct; if not, sync position
                 HeartExplosion.transform.position = transform.position;
                 HeartExplosion.SetActive(true);
 
                 var anim = HeartExplosion.GetComponent<Animator>();
                 if (anim)
                 {
-                    anim.Rebind();      // reset all animated properties
-                    anim.Update(0f);    // apply reset immediately
-                    anim.Play(0, 0, 0f);// play entry state from time 0
+                    anim.Rebind();
+                    anim.Update(0f);
+                    anim.Play(0, 0, 0f);
                 }
             }
 
-            // Hide player visuals and collision temporarily
             var col = GetComponent<Collider2D>();
             if (col) col.enabled = false;
             var body = GetComponent<Rigidbody2D>();
@@ -128,16 +113,15 @@ public class PlayerLifes : MonoBehaviour
         yield return new WaitForSeconds(respawnDelay);
         Respawn();
         currentLives = maxLives;
+        SafeUpdateUI(); // show full hearts after respawn
         onLivesChanged?.Invoke(currentLives);
 
-        // re-enable player parts
         var col = GetComponent<Collider2D>();
         if (col) col.enabled = true;
         var body = GetComponent<Rigidbody2D>();
         if (body) body.simulated = true;
         if (spriteRenderer) spriteRenderer.enabled = true;
 
-        // turn OFF the child explosion after respawn
         if (HeartExplosion) HeartExplosion.SetActive(false);
     }
 
@@ -166,4 +150,13 @@ public class PlayerLifes : MonoBehaviour
             spriteRenderer.color = originalColor;
         }
     }
+
+    private void SafeUpdateUI()
+    {
+        if (UI != null)
+        {
+            UI.UpdateLives(currentLives);
+        }
+    }
+
 }

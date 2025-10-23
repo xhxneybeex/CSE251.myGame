@@ -18,20 +18,26 @@ public class EnemyHealth : MonoBehaviour
     public GameObject HeartExplosion;
     public float explosionLifetime = 0.6f; // seconds to keep the explosion alive
 
+    // added
+    private UIManager ui;
+    private bool countedKill = false; // prevents double counting
+
     private void Awake()
     {
         if (sr == null) sr = GetComponent<SpriteRenderer>();
         if (sr != null) originalColor = sr.color;
 
-        // If an explosion object is already assigned in the hierarchy, keep it off until used
         if (HeartExplosion != null && HeartExplosion.scene.IsValid())
         {
             HeartExplosion.SetActive(false);
         }
+
+        ui = FindObjectOfType<UIManager>(); // safe lookup
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // Consider renaming your projectile tag to "PlayerProjectile"
         if (other.CompareTag("GreenShooter"))
         {
             TakeHit();
@@ -60,6 +66,13 @@ public class EnemyHealth : MonoBehaviour
 
     private IEnumerator Die()
     {
+        // count kill once
+        if (!countedKill && ui != null)
+        {
+            countedKill = true;
+            ui.AddKill(1);
+        }
+
         // Play explosion either by instantiating a prefab or by using an inactive child
         GameObject fx = null;
 
@@ -68,11 +81,10 @@ public class EnemyHealth : MonoBehaviour
             if (HeartExplosion.scene.IsValid())
             {
                 // HeartExplosion is a child already in the scene
-                HeartExplosion.transform.SetParent(null, true);   // detach so it does not get destroyed with the enemy
+                HeartExplosion.transform.SetParent(null, true);
                 HeartExplosion.transform.position = transform.position;
                 HeartExplosion.SetActive(true);
 
-                // reset and play Animator if it exists
                 var anim = HeartExplosion.GetComponent<Animator>();
                 if (anim != null)
                 {
