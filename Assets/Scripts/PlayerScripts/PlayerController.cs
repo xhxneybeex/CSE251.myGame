@@ -2,10 +2,10 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class PlayerController : MonoBehaviour
 {
     //header just makes it so i can change all these variables in the inspector.
-
 
     [Header("Prefabs")]
     public GameObject GreenShooterprefab;
@@ -30,12 +30,24 @@ public class PlayerController : MonoBehaviour
     public float speedIncreaseDuration = 6f; //how long the speed increase lasts
     private bool hasSpeedIncrease = false;
 
+    [Header("2 Frame Animation")]
+    public SpriteRenderer sr;            // drag your SpriteRenderer here
+    public Sprite[] walkFrames = new Sprite[2]; // put your 2 walking frames here
+    public float animSpeed = 0.15f;      // time between flickers
+
+    private float animTimer;
+    private int animIndex;
 
     private Rigidbody2D rb;
     private bool grounded;
     private float lastShootTime = 0f;
+    private float lastXInput;
 
-    void Awake() { rb = GetComponent<Rigidbody2D>(); }
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        if (sr == null) sr = GetComponent<SpriteRenderer>();
+    }
 
     //just checking to see if script is working within the console.
     void Start()
@@ -47,6 +59,7 @@ public class PlayerController : MonoBehaviour
     {
         HandleMovement();
         HandleJump();
+        AnimateAndFlip();
         Bounds();
         HandleShooting();
     }
@@ -55,10 +68,9 @@ public class PlayerController : MonoBehaviour
     {
         //regular movement
         float x = Input.GetAxisRaw("Horizontal");
-     
+        lastXInput = x;
 
         // this is for the speed power-up
-   
         float currentSpeed = hasSpeedIncrease ? moveSpeed * 2f : moveSpeed; // double speed if active
         rb.velocity = new Vector2(x * currentSpeed, rb.velocity.y);
     }
@@ -71,9 +83,9 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         }
     }
+
     //When colliding with anything, mark the player as grounded. When leaving a collision, mark as not grounded.
-    
-        void OnCollisionEnter2D(Collision2D col) { grounded = true; }
+    void OnCollisionEnter2D(Collision2D col) { grounded = true; }
     void OnCollisionExit2D(Collision2D col) { grounded = false; }
 
     void HandleShooting()
@@ -98,6 +110,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // super simple idle/walk + flip
+    void AnimateAndFlip()
+    {
+        // idle sprite if no movement
+        if (Mathf.Abs(lastXInput) < 0.01f)
+        {
+            animIndex = 0;
+            sr.sprite = walkFrames[0];
+            return;
+        }
+
+        // flip left/right
+        if (lastXInput > 0.01f) sr.flipX = true;
+        if (lastXInput < -0.01f) sr.flipX = false;
+
+        // walking animation
+        animTimer += Time.deltaTime;
+        if (animTimer >= animSpeed)
+        {
+            animTimer = 0f;
+            animIndex = 1 - animIndex; // toggles 0 ↔ 1
+            sr.sprite = walkFrames[animIndex];
+        }
+    }
+
     void Bounds()
     {
         //If the player falls below y = -7, teleport them back to(-6, -1)(a respawn point). VERY simple respawn system. Can be tweaked later to be better, fine for now.
@@ -106,7 +143,6 @@ public class PlayerController : MonoBehaviour
             transform.position = new Vector3(-6f, -1f, transform.position.z);
         }
     }
-
 
     // Call this function to activate the big shot power-up... needs to be public or else it cannot be accessed by other scripts.
     public void BigShotPowerUp()
@@ -139,5 +175,4 @@ public class PlayerController : MonoBehaviour
         hasSpeedIncrease = false;
         //makes it so speedboost does not last for ever!
     }
-
 }
