@@ -35,6 +35,10 @@ public class PlayerController : MonoBehaviour
     public Sprite[] walkFrames = new Sprite[2]; // put your 2 walking frames here
     public float animSpeed = 0.15f;      // time between flickers
 
+    [Header("SFX")]
+    public AudioClip shootSFX;           // drag your clip here
+    public AudioSource audioSource;      // can leave empty, we’ll add one in Start if null
+
     private float animTimer;
     private int animIndex;
 
@@ -53,6 +57,10 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         Debug.Log("PlayerController is working, player spawned at " + transform.position);
+
+        // ensure we have an AudioSource to play one-shots from
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
     }
 
     void Update()
@@ -106,6 +114,12 @@ public class PlayerController : MonoBehaviour
 
             proj.GetComponent<GreenShooter>().Initialize(mouse, speedToUse, scaleToUse);
 
+            // play shoot sfx
+            if (shootSFX != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(shootSFX);
+            }
+
             lastShootTime = Time.time;
         }
     }
@@ -122,7 +136,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // flip left/right
-        if (lastXInput > 0.01f) sr.flipX = true;
+        if (lastXInput > 0.01f) sr.flipX = true;   // you chose inverted flip earlier
         if (lastXInput < -0.01f) sr.flipX = false;
 
         // walking animation

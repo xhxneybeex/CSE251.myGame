@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement; // needed for reloading scenes
 using System.Collections;
 
 public class PlayerLifes : MonoBehaviour
@@ -10,9 +11,9 @@ public class PlayerLifes : MonoBehaviour
     [Header("Lives")]
     public int maxLives = 3;
 
-    [Header("Respawn")]
-    public Vector3 respawnPosition = new Vector3(-6f, -1f, 0f);
+    [Header("Respawn / Restart")]
     public float respawnDelay = 1f;
+    public string sceneToReload = "";
 
     [Header("Invincibility Frames")]
     public float invincibleDuration = 1.0f;
@@ -40,14 +41,11 @@ public class PlayerLifes : MonoBehaviour
 
         if (HeartExplosion) HeartExplosion.SetActive(false);
 
-        UI = FindObjectOfType<UIManager>(); // safer than GameObject.Find
-        SafeUpdateUI();                      // show correct hearts immediately
+        UI = FindObjectOfType<UIManager>();
+        SafeUpdateUI();
 
         onLivesChanged?.Invoke(currentLives);
     }
-
-    // REMOVE the per-frame UI write. It can mask your first hit change.
-    // void Update() {}
 
     public void GiveLife(int amount = 1)
     {
@@ -62,7 +60,7 @@ public class PlayerLifes : MonoBehaviour
         if (invincible) return;
 
         currentLives = Mathf.Max(0, currentLives - amount);
-        SafeUpdateUI(); // update hearts immediately on FIRST hit
+        SafeUpdateUI();
         onLivesChanged?.Invoke(currentLives);
         Debug.Log($"Player took damage, lives: {currentLives}");
 
@@ -87,6 +85,7 @@ public class PlayerLifes : MonoBehaviour
                 }
             }
 
+            // freeze player before restart
             var col = GetComponent<Collider2D>();
             if (col) col.enabled = false;
             var body = GetComponent<Rigidbody2D>();
@@ -98,7 +97,7 @@ public class PlayerLifes : MonoBehaviour
             }
             if (spriteRenderer) spriteRenderer.enabled = false;
 
-            StartCoroutine(DelayedRespawn());
+            StartCoroutine(DelayedRestart());
             return;
         }
 
@@ -108,30 +107,18 @@ public class PlayerLifes : MonoBehaviour
         }
     }
 
-    private IEnumerator DelayedRespawn()
+    // waits a moment for the explosion, then reloads the whole scene
+    private IEnumerator DelayedRestart()
     {
         yield return new WaitForSeconds(respawnDelay);
-        Respawn();
-        currentLives = maxLives;
-        SafeUpdateUI(); // show full hearts after respawn
-        onLivesChanged?.Invoke(currentLives);
 
-        var col = GetComponent<Collider2D>();
-        if (col) col.enabled = true;
-        var body = GetComponent<Rigidbody2D>();
-        if (body) body.simulated = true;
-        if (spriteRenderer) spriteRenderer.enabled = true;
+        // if you left sceneToReload empty, reload whatever is active
+        string target = string.IsNullOrEmpty(sceneToReload)
+            ? SceneManager.GetActiveScene().name
+            : sceneToReload;
 
-        if (HeartExplosion) HeartExplosion.SetActive(false);
-    }
-
-    private void Respawn()
-    {
-        var body = GetComponent<Rigidbody2D>();
-        if (body) body.velocity = Vector2.zero;
-
-        transform.position = respawnPosition;
-        Debug.Log("Player respawned");
+        // if you hardcode, use exact case: "SampleScene"
+        SceneManager.LoadScene(target);
     }
 
     private IEnumerator StartIFrames()
@@ -158,5 +145,4 @@ public class PlayerLifes : MonoBehaviour
             UI.UpdateLives(currentLives);
         }
     }
-
 }
