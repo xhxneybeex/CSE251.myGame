@@ -5,6 +5,6 @@ public class GameStartManager : MonoBehaviour
 {
     public void StartGame()
     {
-        SceneManager.LoadScene("SampleScene"); // put your actual scene name here
+        SceneManager.LoadScene("SampleScene"); //the scene in which the main game is
     }
 }

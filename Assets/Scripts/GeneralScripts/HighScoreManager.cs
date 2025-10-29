@@ -6,13 +6,13 @@ using UnityEngine;
 public class HighScoreEntry
 {
     public int score;
-    public string date; // optional: ISO string for when it happened
+    public string date; // when score was saved
 }
 
 [Serializable]
 public class HighScoreData
 {
-    public List<HighScoreEntry> entries = new List<HighScoreEntry>();
+    public List<HighScoreEntry> entries = new List<HighScoreEntry>(); // list of scores
 }
 
 public class HighScoreManager : MonoBehaviour
@@ -23,11 +23,12 @@ public class HighScoreManager : MonoBehaviour
     [Tooltip("How many top scores to keep.")]
     public int maxEntries = 10;
 
-    private const string KEY = "HighScores";
-    private HighScoreData data = new HighScoreData();
+    private const string KEY = "HighScores"; // save key
+    private HighScoreData data = new HighScoreData(); // local data
 
     void Awake()
     {
+        // make sure only one exists
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -36,13 +37,14 @@ public class HighScoreManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        Load();
+        Load(); // load saved scores
     }
 
     public void AddScore(int score)
     {
         if (score < 0) score = 0;
 
+        // create new score entry
         var entry = new HighScoreEntry
         {
             score = score,
@@ -50,21 +52,23 @@ public class HighScoreManager : MonoBehaviour
         };
 
         data.entries.Add(entry);
-        // sort high → low and cap list
+        // sort from highest to lowest
         data.entries.Sort((a, b) => b.score.CompareTo(a.score));
+        // trim list if too long
         if (data.entries.Count > maxEntries)
             data.entries.RemoveRange(maxEntries, data.entries.Count - maxEntries);
 
-        Save();
+        Save(); // save updated list
     }
 
     public IReadOnlyList<HighScoreEntry> GetScores()
     {
-        return data.entries;
+        return data.entries; // return all scores
     }
 
     public void ClearAll()
     {
+        // wipe everything
         data.entries.Clear();
         PlayerPrefs.DeleteKey(KEY);
         PlayerPrefs.Save();
@@ -72,6 +76,7 @@ public class HighScoreManager : MonoBehaviour
 
     private void Save()
     {
+        // turn data into JSON and save , JSON good for saving data, it is javascript object notation.
         string json = JsonUtility.ToJson(data);
         PlayerPrefs.SetString(KEY, json);
         PlayerPrefs.Save();
@@ -79,6 +84,7 @@ public class HighScoreManager : MonoBehaviour
 
     private void Load()
     {
+        // try to load from PlayerPrefs
         if (PlayerPrefs.HasKey(KEY))
         {
             string json = PlayerPrefs.GetString(KEY);
@@ -88,12 +94,12 @@ public class HighScoreManager : MonoBehaviour
             }
             catch
             {
-                data = new HighScoreData();
+                data = new HighScoreData(); // reset if broken, if JSON corrupted
             }
         }
         else
         {
-            data = new HighScoreData();
+            data = new HighScoreData(); // start fresh
         }
     }
 }

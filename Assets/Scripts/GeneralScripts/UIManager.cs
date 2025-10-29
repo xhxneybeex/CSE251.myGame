@@ -5,13 +5,13 @@ using System.Text;
 public class UIManager : MonoBehaviour
 {
     [Header("Lives UI")]
-    [SerializeField] private Image[] hearts; // Heart1..Heart3
+    [SerializeField] private Image[] hearts; //put our heart imgs
 
     [Header("Coins UI")]
     [SerializeField] private Text coinText;
 
     [Header("Kills UI")]
-    [SerializeField] private Text killsText; // <- assign in Inspector
+    [SerializeField] private Text killsText; 
 
     private int coinCount = 0;
     private int killCount = 0;
@@ -19,14 +19,14 @@ public class UIManager : MonoBehaviour
     public int CurrentCoins => coinCount;
     public int CurrentKills => killCount;
 
-    // ----- Lives -----
+    // livwes
     public void UpdateLives(int currentLives)
     {
         for (int i = 0; i < hearts.Length; i++)
             hearts[i].enabled = i < currentLives;
     }
 
-    // ----- Coins -----
+    // coins
     public void AddCoin(int amount = 1)
     {
         coinCount += amount;
@@ -39,7 +39,7 @@ public class UIManager : MonoBehaviour
         if (coinText) coinText.text = "Coins: 0";
     }
 
-    // ----- Kills -----
+    // kills
     public void AddKill(int amount = 1)
     {
         killCount += amount;

@@ -7,7 +7,7 @@ public class PauseManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)) //can use esc or p to pause
         {
             if (IsPaused)
                 ResumeGame();
@@ -37,6 +37,7 @@ public class PauseManager : MonoBehaviour
         // Give the player a frame to move the mouse and regain aim position
         StartCoroutine(ReLockCursorAfterDelay());
         Input.ResetInputAxes(); // flush old clicks
+        //needed this because green shooter kept shooting immediately after unpausing and make the game act weird.
     }
 
     private System.Collections.IEnumerator ReLockCursorAfterDelay()
@@ -48,6 +49,6 @@ public class PauseManager : MonoBehaviour
 
     public void QuitGame()
     {
-        Application.Quit();
+        Application.Quit(); //basically alt f4
     }
 }

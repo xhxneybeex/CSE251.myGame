@@ -2,8 +2,8 @@
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target; // Assign your player here
-    public Vector3 offset;   // Optional: tweak for better framing
+    public Transform target; // Assign player
+    public Vector3 offset;   // tweak for better framing of cam to player
     public float smoothSpeed = 0.125f; //makes it so the camera doesnt make the player wanna die playing ur game
 
     void LateUpdate()

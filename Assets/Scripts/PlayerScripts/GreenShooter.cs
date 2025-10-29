@@ -9,12 +9,11 @@ public class GreenShooter : MonoBehaviour
     private float speed;
     private bool initialized = false;
 
-    /// <summary>
-    /// Must be called right after Instantiate.
-    /// targetWorldPos: world point to fly toward (e.g., mouse world position)
-    /// speedOverride: >0 to override default speed
-    /// scale: 1 = normal, otherwise scales the projectile
-    /// </summary>
+    // Must be called right after Instantiate.
+    // targetWorldPos: world point to fly toward (e.g., mouse world position)
+    // speedOverride: >0 to override default speed
+    // scale: 1 = normal, otherwise scales the projectile
+    
     public void Initialize(Vector3 targetWorldPos, float speedOverride = 0f, float scale = 1f)
     {
         if (PauseManager.IsPaused) return; // ignore init while paused

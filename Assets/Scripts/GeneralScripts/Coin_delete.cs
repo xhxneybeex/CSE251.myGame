@@ -2,9 +2,9 @@
 
 public class Coin_delete : MonoBehaviour
 {
-    [SerializeField] private float fallSpeed = 2f;
-    [SerializeField] private float destroyY = -7f;
-    [SerializeField] private int coinValue = 1; // how many coins this pickup gives
+    [SerializeField] private float fallSpeed = 2f; //how fast coin falls    
+    [SerializeField] private float destroyY = -7f; // Y position to destroy coin, so it doesnt fill up hierarchy and make memory leak.
+    [SerializeField] private int coinValue = 1; // how many coins  pickup gives
 
     private UIManager uiManager;
     private bool collected = false;
@@ -22,7 +22,7 @@ public class Coin_delete : MonoBehaviour
     {
         transform.position += Vector3.down * fallSpeed * Time.deltaTime;
 
-        if (transform.position.y < destroyY)
+        if (transform.position.y < destroyY) //y pos to destroy coin
         {
             Destroy(gameObject);
         }
@@ -41,7 +41,7 @@ public class Coin_delete : MonoBehaviour
                 uiManager.AddCoin(coinValue);
             }
 
-            // optional: disable visuals immediately to avoid double hits
+            // disable visuals immediately to avoid double coin collection.
             var sr = GetComponent<SpriteRenderer>();
             if (sr) sr.enabled = false;
             var col = GetComponent<Collider2D>();

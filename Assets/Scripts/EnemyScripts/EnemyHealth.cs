@@ -8,40 +8,38 @@ public class EnemyHealth : MonoBehaviour
     private int currentHits = 0;
 
     [Header("Visuals")]
-    public SpriteRenderer sr;          // optional, auto-filled if left empty
+    public SpriteRenderer sr;
     public Color hitColor = Color.red;
     private Color originalColor;
 
     [Header("Explosion")]
-    // If this is a prefab, we will Instantiate it.
-    // If this is a child object on the enemy, we will detach, play, then destroy it.
     public GameObject HeartExplosion;
-    public float explosionLifetime = 0.6f; // seconds to keep the explosion alive
+    public float explosionLifetime = 0.6f;
 
-    // added
     private UIManager ui;
-    private bool countedKill = false; // prevents double counting
+    private bool countedKill = false;
 
     private void Awake()
     {
+        // get sprite and remember the original color
         if (sr == null) sr = GetComponent<SpriteRenderer>();
         if (sr != null) originalColor = sr.color;
 
+        // turn off explosion if it's already in the scene
         if (HeartExplosion != null && HeartExplosion.scene.IsValid())
-        {
             HeartExplosion.SetActive(false);
-        }
 
-        ui = FindObjectOfType<UIManager>(); // safe lookup
+        // find UI
+        ui = FindObjectOfType<UIManager>();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Consider renaming your projectile tag to "PlayerProjectile"
+        // only react to player bullets
         if (other.CompareTag("GreenShooter"))
         {
             TakeHit();
-            Destroy(other.gameObject); // kill bullet on hit
+            Destroy(other.gameObject);
         }
     }
 
@@ -49,12 +47,12 @@ public class EnemyHealth : MonoBehaviour
     {
         currentHits++;
 
+        // quick red flash when hit
         if (sr != null) StartCoroutine(FlashRed());
 
+        // die if out of health
         if (currentHits >= maxHits)
-        {
             StartCoroutine(Die());
-        }
     }
 
     private IEnumerator FlashRed()
@@ -66,25 +64,24 @@ public class EnemyHealth : MonoBehaviour
 
     private IEnumerator Die()
     {
-        // count kill once
+        // add to kill count once
         if (!countedKill && ui != null)
         {
             countedKill = true;
             ui.AddKill(1);
         }
 
-        // Play explosion either by instantiating a prefab or by using an inactive child
         GameObject fx = null;
 
+        // handle explosion effect
         if (HeartExplosion != null)
         {
             if (HeartExplosion.scene.IsValid())
             {
-                // HeartExplosion is a child already in the scene
+                // if explosion is already part of the scene
                 HeartExplosion.transform.SetParent(null, true);
                 HeartExplosion.transform.position = transform.position;
                 HeartExplosion.SetActive(true);
-
                 var anim = HeartExplosion.GetComponent<Animator>();
                 if (anim != null)
                 {
@@ -92,12 +89,11 @@ public class EnemyHealth : MonoBehaviour
                     anim.Update(0f);
                     anim.Play(0, 0, 0f);
                 }
-
                 fx = HeartExplosion;
             }
             else
             {
-                // HeartExplosion is a prefab
+                // if it's a prefab, spawn it
                 fx = Instantiate(HeartExplosion, transform.position, Quaternion.identity);
                 var anim = fx.GetComponent<Animator>();
                 if (anim != null)
@@ -109,10 +105,10 @@ public class EnemyHealth : MonoBehaviour
             }
         }
 
-        // remove the enemy now
+        // remove enemy
         Destroy(gameObject);
 
-        // let the explosion live for a moment, then clean up
+        // destroy explosion after a short delay
         if (fx != null)
         {
             yield return new WaitForSeconds(explosionLifetime);
